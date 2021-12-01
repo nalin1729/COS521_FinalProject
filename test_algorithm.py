@@ -1,49 +1,8 @@
 import random
 from collections import defaultdict
+from matroid import random_matroid
 
 # Import any algorithm implementations here
-
-class Matroid:
-    # Elements are always assumed to be 0, 1, ..., n - 1
-    # IMPORTANT: ind_sets must be a set of frozensets
-    def __init__(self, n, ind_sets):
-        self.n = n
-        self.I = ind_sets
-
-    def __str__(self):
-        return f"Matroid([{str(sorted([list(s) for s in self.I], key=lambda s: (len(s), s)))[1:-1].replace('[', '{').replace(']', '}')}])"
-
-    def is_independent(self, s):
-        return s in self.I
-
-    # Finds the max-weight basis of given set of elements (that is a subset of 0, ..., n - 1)
-    # Here elements is a dictionary where the key is element index and value is weight
-    def find_max_weight_basis(self, elements):
-        # Use the greedy algorithm
-        order = sorted(elements.items(), key=lambda item: item[1], reverse=True)
-        
-        current = frozenset()
-        for e in order:
-            potential = current.union(frozenset([e[0]]))
-            print(potential)
-            if self.is_independent(potential):
-                current = potential
-
-        return current
-
-    # Return all elements in the span of the given elements
-    def span(self, elements):
-        elements_with_weights = dict([(e, 0) for e in elements])
-        basis = self.find_max_weight_basis(elements_with_weights)
-
-        # brute force: loop through all elements and check if spanned by basis
-        span = set()
-        for i in range(self.n):
-            if i in basis: span.add(i)
-            else:
-                if not self.is_independent(basis.union(frozenset(i))): span.add(i)
-
-        return span
 
 class FreeOrderMatroidAlgo:
     def __init__(self, matroid, weights):
@@ -52,32 +11,20 @@ class FreeOrderMatroidAlgo:
         self.matroid = matroid
         self.weights = weights
 
-# algo is assumed to be a FreeOrderMatroidAlgo. Returns averaged payoff over all trials
-# weights will be a list of values of each item
-def run_trials(num_trials, algo):
-    sum = 0
-    total_counts = defaultdict(lambda: 0)
-    for i in range(num_trials):
-        weight, included = algo.run_trial()
-        sum += weight
-
-        for element in included: total_counts[element] += 1
-
-    return sum / num_trials, total_counts
-
 class Conjecture(FreeOrderMatroidAlgo):
-    def __init__(self, matroid):
-        super().__init__(matroid)
+    def __init__(self, matroid, weights):
+        super().__init__(matroid, weights)
         
         # Sample S
-        S = set()
+        S = []
         self.P = set()
-        for i in range(self.n):
-            if random.rand() < 0.5: S.add(i)
+        for i in range(self.matroid.n):
+            if random.random() < 0.5: 
+                S.append((i, self.weights[i]))
             else: self.P.add(i)
-        S = frozenset(S)
+
         self.P = frozenset(self.P)
-        self.X = self.matroid.find_max_weight_basis(S) # max-weight basis of S
+        self.X = self.matroid.find_max_weight_basis(dict(S)) # max-weight basis of S
 
         self.current_iteration = 0
         self.current_span = frozenset()
@@ -89,8 +36,9 @@ class Conjecture(FreeOrderMatroidAlgo):
         A = frozenset() # store the answer
 
         for i, basis_elem in enumerate(self.X):
-            next_span = self.matroid.span(self.X[:i + 1]).intersect(self.P)
-            candidates = random.shuffle(list(next_span.difference(current_span)))
+            next_span = self.matroid.span(self.X[:i + 1]).intersection(self.P)
+            candidates = list(next_span.difference(current_span))
+            random.shuffle(candidates)
 
             for y in candidates:
                 remaining.remove(y)
@@ -99,9 +47,41 @@ class Conjecture(FreeOrderMatroidAlgo):
                         A = A.union(frozenset([y]))
                         total += self.weights[y]
 
-        for y in random.shuffle(list(remaining)):
+            current_span = next_span
+
+        remaining = list(remaining)
+        random.shuffle(remaining)
+        for y in remaining:
             if self.matroid.is_independent(A.union(frozenset([y]))): 
                 A = A.union(frozenset([y]))
                 total += self.weights[y]
 
         return total, A
+
+# algo is assumed to be a FreeOrderMatroidAlgo. Returns averaged payoff over all trials
+# weights will be a list of values of each item
+def run_trials(num_trials, matroid, weights):
+    sum = 0
+    total_counts = defaultdict(lambda: 0)
+    for _ in range(num_trials):
+        algo = Conjecture(matroid, weights)
+        weight, included = algo.run_trial()
+        sum += weight
+
+        for element in included: total_counts[element] += 1
+
+    return sum / num_trials, total_counts
+
+if __name__ == '__main__':
+    random.seed(192)
+    n = 7; rank = 3; numBases = 3
+    M = random_matroid(n, rank, numBases)
+    print(M)
+
+    # print(M.find_max_weight_basis({2: 3, 1: 5, 4: 3, 6: 10, 3: 2}))
+    # print(M.span([2, 4]))
+
+    weights = [random.randint(0, 10) for i in range(n)]
+    print(weights)
+    print(run_trials(100, M, weights))
+    print(M.find_max_weight_basis(dict([(i, weight) for i, weight in enumerate(weights)])))
