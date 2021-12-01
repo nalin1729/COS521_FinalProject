@@ -4,12 +4,18 @@ import math
 from test_algorithm import Matroid
 
 def random_matroid(n, rank, num_bases):
-    max_bases = math.comb(n, rank)
-    assert num_bases <= max_bases, 'number of bases must be at most nCr(n, rank)'
+    assert num_bases <= math.comb(n, rank), 'number of bases must be at most nCr(n, rank)'
     assert rank <= n, 'rank cannot exceed n'
+    assert rank * num_bases >= n, 'rank * num_bases must exceed n to fill the universe'
 
-    # select bases randomly
-    bases = random.sample(list(itertools.combinations(range(n), rank)), num_bases) 
+    # select num_bases randomly
+    bases = random.sample(list(itertools.combinations(range(n), rank)), num_bases)
+    universe = set()
+    for b in bases: universe = universe.union(set(b))
+    while len(universe) < n:
+        bases = random.sample(list(itertools.combinations(range(n), rank)), num_bases)
+        universe = set()
+        for b in bases: universe = universe.union(set(b))
 
     # generate all subsets of all bases, could maybe be made more efficient
     ind_sets = set(frozenset(x) for b in bases for i in range(1, rank+1) for x in itertools.combinations(b, i))
