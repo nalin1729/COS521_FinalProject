@@ -9,7 +9,7 @@ def random_matriod(n, rank, num_bases):
     assert rank <= n, 'rank cannot exceed n'
 
     all_bases = itertools.combinations(range(n), rank)
-    bases_indices = random.sample(range(max_bases), num_bases)
+    bases_indices = set(random.sample(range(max_bases), num_bases))
 
     # select num_bases randomly
     bases = set()
