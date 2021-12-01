@@ -78,6 +78,9 @@ class Conjecture(FreeOrderMatroidAlgo):
         self.X = self.matroid.find_max_weight_basis(S) # max-weight basis of S
 
         self.current_iteration = 0
+        self.current_span = frozenset()
 
     def next_request(self):
-        pass
+        next_span = self.matroid.span(self.X[:self.current_iteration + 1])
+        for y in next_span.difference(self.current_span):
+            
