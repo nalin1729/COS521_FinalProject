@@ -9,6 +9,9 @@ class Matroid:
         self.n = n
         self.I = ind_sets
 
+    def __str__(self):
+        return f"Matroid([{str(sorted([list(s) for s in self.I], key=lambda s: (len(s), s)))[1:-1].replace('[', '{').replace(']', '}')}])"
+
     def is_independent(self, s):
         return s in self.I
 
