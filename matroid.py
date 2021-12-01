@@ -2,6 +2,8 @@ import random
 import itertools
 import math
 
+from numpy.matrixlib.defmatrix import matrix
+
 class Matroid:
     # Elements are always assumed to be 0, 1, ..., n - 1
     # IMPORTANT: ind_sets must be a set of frozensets
@@ -15,7 +17,7 @@ class Matroid:
     def is_independent(self, s):
         return s in self.I
 
-    # Finds the max-weight basis of given set of elements (that is a subset of 0, ..., n - 1)
+    # Finds a max-weight basis of given set of elements (that is a subset of 0, ..., n - 1)
     # Here elements is a dictionary where the key is element index and value is weight
     def find_max_weight_basis(self, elements):
         # Use the greedy algorithm
@@ -45,6 +47,32 @@ class Matroid:
 
         return span
 
+class VectorMatroid(Matroid):
+    def __init__(self, vectors):
+        self.n = len(vectors)
+        self.matrix = vectors
+        self.index_to_vector = {}
+        for i, vector in enumerate(vectors):
+            self.index_to_vector[vector] = i
+
+    def __str__(self):
+        return str(matrix)
+
+    def is_independent(self, s):
+        from numpy.linalg import matrix_rank
+
+        s = tuple([self.matrix[e] for e in s])
+        return matrix_rank(s) == len(s)
+
+    # Same interface as Matroid
+    def find_max_weight_basis(self, elements):
+        return super().find_max_weight_basis(elements)
+
+    # Same interface as Matroid
+    def span(self, elements):
+        #print(elements)
+        return super().span(elements)
+
 def random_matroid(n, rank, num_bases):
     assert num_bases <= math.comb(n, rank), 'number of bases must be at most nCr(n, rank)'
     assert rank <= n, 'rank cannot exceed n'
@@ -64,8 +92,13 @@ def random_matroid(n, rank, num_bases):
     return Matroid(n, ind_sets)
 
 if __name__ == '__main__':
-    random.seed(192)
-    M = random_matroid(7, 3, 3)
-    print(M)
+    # random.seed(192)
+    # M = random_matroid(7, 3, 3)
+    # print(M)
 
-    print(M.find_max_weight_basis({2: 3, 1: 5, 4: 3, 6: 10, 3: 2}))
+    # print(M.find_max_weight_basis({2: 3, 1: 5, 4: 3, 6: 10, 3: 2}))
+
+    vectors = ((1, 2, 3), (4, 5, 6), (7, 8, 9), (10, 11, 12), (-4, 3, 2))
+    M = VectorMatroid(vectors)
+    print(M.span((3,2)))
+
