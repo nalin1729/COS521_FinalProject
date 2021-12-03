@@ -1,6 +1,6 @@
 import random
 #from matroid import Matroid
-
+from sage.matroids.constructor import Matroid
 # https://www.sciencedirect.com/science/article/pii/0012365X75900758
 def knuth_random_matroid(n):
     universe = frozenset(range(n))
@@ -56,7 +56,7 @@ def knuth_random_matroid(n):
         for Y in X:
             closed_sets.append((rank, Y))
 
-    Matroid(universe, circuit_closures = closed_sets)
+    print(Matroid(universe, circuit_closures = closed_sets))
     return closed_sets
 
 def contained(AandB, Fr):
